@@ -6,7 +6,8 @@ from datetime import datetime
 from collections import defaultdict
 import networkx as nx
 import matplotlib.pyplot as plt
-from dijkstra_algorithm import dijkstra_search
+from dijkstra_algorithm import dijkstra_search, optimized_dijkstra, simplified_dijkstra
+from new_code import find_route
 
 #algorytm wyszukiwania najkrótszych połączeń pomiędzy zadanymi przystankami A i B
 #miarę odległości, zależnie od decyzji użytkownika, czas dojazdu z A do B lub liczba przesiadek koniecznych do wykonania
@@ -171,7 +172,20 @@ if __name__ == "__main__":
     print_random_nodes(G)
     print_random_edges(G)
 
-    pause_time = datetime.now()
-    print(f"{format_time(datetime.now())} - Begin Dijkstra")
-    dijkstra_search("PL. GRUNWALDZKI", "Wrocławski Park Przemysłowy", "18:47")
-    print(f"{format_time(datetime.now())} - Finished Dijkstra")
+    # print(f"{format_time(datetime.now())} - Begin Dijkstra")
+    # dijkstra_search(G, "PL. GRUNWALDZKI", "Wrocławski Park Przemysłowy", "18:47")
+    # print(f"{format_time(datetime.now())} - Finish Dijkstra")
+    # print(f"{format_time(datetime.now())} - Begin Optimized Dijkstra")
+    # optimized_dijkstra(G, "PL. GRUNWALDZKI", "Wrocławski Park Przemysłowy", "18:47")
+    # print(f"{format_time(datetime.now())} - Finished Optimized Dijkstra")
+    print(f"{format_time(datetime.now())} - Begin Simplified Dijkstra")
+    path, cost = simplified_dijkstra(G, "PL. GRUNWALDZKI", "Wrocławski Park Przemysłowy", "23:49")
+    print("Shortest path:")
+    for stop in path:
+        if stop[1]:
+            print(f"{stop[0]} - line {stop[1]} ({stop[2]} - {stop[3]})")
+    print(f"Total travel time: {cost} minutes")
+    print(f"{format_time(datetime.now())} - Finished Simplified Dijkstra")
+    # print(f"{format_time(datetime.now())} - Begin New Dijkstra")
+    # find_route(G, "PL. GRUNWALDZKI", "Wrocławski Park Przemysłowy", "18:47")
+    # print(f"{format_time(datetime.now())} - Finished New Dijkstra")
