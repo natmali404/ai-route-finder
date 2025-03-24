@@ -18,46 +18,55 @@ def find_dijkstra_path(graph, starting_stop_name, destination_stop_name, start_t
     for node in graph.get_nodes():
         distance[node] = float('inf') if node != starting_stop else 0
         
-    #previous node - ()
+    #previous node - now stores (node, edge) pairs
     previous = {}
     for node in graph.get_nodes():
-        previous[node] = None
+        previous[node] = (None, None)  # (previous_node, edge_used)
     
     #priority queue
     visited = set()
     priority_queue = [(0, start_time, starting_stop)]
     
     while priority_queue:
-        v_current_cost, v_current_time, v_current_stop  = heapq.heappop(priority_queue)
-        if v_current_stop in visited:
+        current_cost, current_time, current_stop  = heapq.heappop(priority_queue)
+        if current_stop in visited:
             continue
 
-        visited.add(v_current_stop)
+        visited.add(current_stop)
         
-        if v_current_stop == destination_stop:
+        if current_stop == destination_stop:
             break
 
-        for k in v_current_stop.get_outgoing_edges():
-            u = k.end
-            u_cost = distance[u]
+        for neighbor_edge in current_stop.get_outgoing_edges():
+            next_stop = neighbor_edge.end
+            next_stop_cost = distance[next_stop]
             
-            if v_current_cost + k.travel_time < u_cost:
-                distance[u] = v_current_cost + k.travel_time
-                previous[u] = v_current_stop
-                heapq.heappush(priority_queue, (distance[u], k.arr_time, u))
+            if current_cost + neighbor_edge.travel_time < next_stop_cost:
+                distance[next_stop] = current_cost + neighbor_edge.travel_time
+                previous[next_stop] = (current_stop, neighbor_edge)  # Store edge info
+                heapq.heappush(priority_queue, (distance[next_stop], neighbor_edge.arr_time, next_stop))
 
-
-                
+    # Path reconstruction with line and time info
     print(f"\nShortest path from {starting_stop_name} to {destination_stop_name} at {start_time}:")
-    path_node = destination_stop
-    print(path_node)
-    while path_node is not None:
-        print(previous[path_node])
-        path_node = previous[path_node]
     
-    # for key, value in previous:
-    #     print(f"{key}'s previous -> {value}")
-    #print(previous)
+    path = []
+    current = destination_stop
+    while current != starting_stop:
+        prev_node, edge_used = previous[current]
+        if prev_node is None:  # No path exists
+            print("No complete path found!")
+            return
+        path.append((prev_node, edge_used, current))
+        current = prev_node
+    
+    # Print in chronological order
+    path.reverse()
+    print(f"Start at {starting_stop.name} (Time: {start_time})")
+    for prev_node, edge, current_node in path:
+        print(f"  → Take line {edge.line} at {edge.dep_time} from {prev_node.name}")
+        print(f"    → Arrive at {current_node.name} at {edge.arr_time} ({edge.travel_time} mins)")
+    
+    print(f"\nTotal travel time: {distance[destination_stop]} minutes")
     
     
 

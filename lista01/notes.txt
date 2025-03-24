@@ -1,0 +1,23 @@
+dijkstra
+
+v - wierzcholek poczatkowy
+Q - wszystkie wierzcholki grafu
+S - zbior pusty
+
+dla wszystkich wierzcholkow u grafu:
+koszt d(u) = inf
+koszt d(v) = 0
+
+p(u) = undefined - poprzednik kazdego wierzcholka u grafu (poprzednik wyznaczaja w kierunku odwreotnym najkrotsze sciezki od u do v)
+
+dopoki Q ma wierzcholki:
+- wybieramy z Q wierzcholek u o minimalnym d(u)
+- usuwamy u z Q i dodajemy do S 
+- dla kazdego sasiada w wierzcholka u:
+- jesli d(w) > d(u) + waga krawedzi u-w:
+wyznaczamy nowy kozt dojscia do w jako d(w) = d(u) + waga krawedzi u-w 
+nastepnie wierzcholek u czynimy poprzednikiem w - p(w) = u 
+
+
+wazne:
+trzeba znalezc czas 
