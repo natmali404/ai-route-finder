@@ -4,171 +4,193 @@ import random
 
 #time helpers
 def time_to_minutes(time_str):
-    """Handles times > 23:59 by wrapping around (e.g., 24:05 -> 00:05)"""
-    h, m, s = map(int, time_str.split(':'))
-    return (h % 24) * 60 + m  # Force 24h+ times into 0-23 range
-
-def calculate_wait_time(current_time_min, departure_time_min):
-    """Returns minutes until next departure, handling midnight crossing"""
-    if departure_time_min >= current_time_min:
-        return departure_time_min - current_time_min
-    else:
-        return (1440 - current_time_min) + departure_time_min
-
-def calculate_arrival_time(departure_time_min, travel_time):
-    """Returns arrival time in minutes, properly handling >1440"""
-    arrival = departure_time_min + travel_time
-    return arrival % 1440  # Wrap around if exceeds 24h
-
-def format_time(minutes):
-    """Converts minutes since midnight to HH:MM"""
-    return f"{minutes//60 % 24:02d}:{minutes%60:02d}"
-
-#path, cost = simplified_dijkstra(G, "PL. GRUNWALDZKI", "Wrocławski Park Przemysłowy", "23:49")
-def find_dijkstra_path(graph, starting_stop_name, destination_stop_name, start_time):
-    #if gdy cos jest koncowym przystankiem to spradzamy czy wsyzstkie krawedzie byly sprawdzone
+    parts = list(map(int, time_str.split(':')))
+    h = parts[0]
+    m = parts[1]
     
-    #firstly, check if the stop even exists
+    return (h % 24) * 60 + m
+
+
+def minutes_to_time(minutes):
+    h = minutes // 60 % 24
+    m = minutes % 60
+    return f"{h:02d}:{m:02d}:00"
+
+
+#CURRENT BEST VERSION but trying to modify
+def find_dijkstra_path(graph, starting_stop_name, destination_stop_name, start_time):
+    #check if the stop even exists
     starting_stop = graph.get_node(starting_stop_name)
     destination_stop = graph.get_node(destination_stop_name)
+    
     if starting_stop is None:
         print("Starting stop not found")
         return
     
-    #distance table
-    distance = {}
-    for node in graph.get_nodes():
-        distance[node] = float('inf') if node != starting_stop else 0
-        
-    #previous node - now stores (node, edge) pairs
-    previous = {}
-    for node in graph.get_nodes():
-        previous[node] = (None, None)  # (previous_node, edge_used)
+    start_total = time_to_minutes(start_time)
     
-    #priority queue
-    visited = set()
-    priority_queue = [(0, start_time, starting_stop)]
+    distance = {}
+    previous = {}
+    transfers = {}
+    for node in graph.get_nodes():
+        distance[node] = float('inf')
+        previous[node] = (None, None, None)  #previous: (prev_node, edge_used, current_line)
+        transfers[node] = float('inf')
+    distance[starting_stop] = 0
+    transfers[starting_stop] = 0
+    
+    # priority_queue = [(0, starting_stop, None, start_total)] #pq: (total_cost, current_stop, current_line, current_time)
+    # Priority queue: (transfer_count, total_cost, stop, current_line, current_time)
+    priority_queue = [(0, 0, starting_stop, None, start_total)]  
     
     while priority_queue:
-        current_cost, current_time, current_stop  = heapq.heappop(priority_queue)
-        if current_stop in visited:
-            continue
-
-        visited.add(current_stop)
+        current_transfers, current_cost, current_stop, current_line, current_time = heapq.heappop(priority_queue)
         
         if current_stop == destination_stop:
             break
 
-        #do current cost nalezy dodac czas oczekiwania na przystanku
-        
         for neighbor_edge in current_stop.get_outgoing_edges():
-            next_stop = neighbor_edge.end
-            next_stop_cost = distance[next_stop]
+            
+            dep_total = time_to_minutes(neighbor_edge.dep_time)
+            
+            if dep_total < current_time: #consider only edges that depart after current time?
+                continue
+            
+            #something could be wrong here - maybe?
+            wait_time = dep_total - current_time #if current_stop != starting_stop else 0 #<- better results but RANDOM
+            
+            #penalties
+            new_transfer_count = current_transfers + (1 if (current_line is not None and neighbor_edge.line != current_line) else 0)
+            transfer_penalty = 10 if (current_line is not None and neighbor_edge.line != current_line) else 0
+            
+            total_edge_cost = neighbor_edge.travel_time + wait_time + transfer_penalty
+            new_cost = current_cost + total_edge_cost
+            
+            arr_total = time_to_minutes(neighbor_edge.arr_time)
+            
+            if new_cost < distance[neighbor_edge.end]:
+                distance[neighbor_edge.end] = new_cost
+                transfers[neighbor_edge.end] = new_transfer_count
+                previous[neighbor_edge.end] = (current_stop, neighbor_edge, neighbor_edge.line)
+                heapq.heappush(priority_queue, (new_transfer_count, new_cost, neighbor_edge.end, neighbor_edge.line, arr_total)) #(total_cost, current_stop, current_line, current_time)
+                
+                  
+    print(f"\nShortest path from {starting_stop_name} to {destination_stop_name} at {start_time}:")
+    
+    path = []
+    current = destination_stop
+    while current != starting_stop:
+        prev_node, edge_used, line_used = previous[current]
+        if prev_node is None:
+            print("No complete path found!")
+            return
+        path.append((prev_node, edge_used, current, line_used))
+        current = prev_node
+    
+    #elegant print
+    path.reverse()
+    print(f"Start at {starting_stop.name} (Time: {start_time})")
+    current_line = None
+    for prev_node, edge, current_node, line in path:
+        if line != current_line:
+            print(f"  → Change to line {line} at {prev_node.name}")
+            current_line = line
+        print(f"    → Depart at {edge.dep_time} from {prev_node.name}")
+        print(f"    → Arrive at {current_node.name} at {edge.arr_time} ({edge.travel_time} mins)")
+    
+    print(f"\nTotal travel time: {distance[destination_stop]} minutes")
+
+
+
+#CURRENT BEST VERSION
+def current_best_find_dijkstra_path(graph, starting_stop_name, destination_stop_name, start_time):
+    #check if the stop even exists
+    starting_stop = graph.get_node(starting_stop_name)
+    destination_stop = graph.get_node(destination_stop_name)
+    
+    if starting_stop is None:
+        print("Starting stop not found")
+        return
+    
+    start_total = time_to_minutes(start_time)
+    
+    distance = {}
+    previous = {}
+    for node in graph.get_nodes():
+        distance[node] = float('inf')
+        previous[node] = (None, None, None)  #(prev_node, edge_used, current_line)
+    distance[starting_stop] = 0
+    
+    #visited = set()
+    # priority_queue = [(0, start_total, starting_stop, None)] #(total_cost, current_time, current_stop, current_line)
+    priority_queue = [(0, starting_stop, None, start_total)] #(total_cost, current_stop, current_line, current_time)
+    #print(priority_queue[0])
+    
+    while priority_queue:
+        current_cost, current_stop, current_line, current_time = heapq.heappop(priority_queue) #(total_cost, current_stop, current_line, current_time)
+        # if current_stop in visited:
+        #     continue
+
+        #visited.add(current_stop)
+        
+        if current_stop == destination_stop:
+            break
+
+        for neighbor_edge in current_stop.get_outgoing_edges():
+            
+            dep_total = time_to_minutes(neighbor_edge.dep_time)
+            
+            if dep_total < current_time: #consider only edges that depart after current time
+                continue
+            
+            #something could be wrong here - maybe?
+            # if current_stop==starting_stop:
+            #     print(f"Dep total: {dep_total}, Current time: {current_time}, wait time: {dep_total - current_time}")
+            wait_time = dep_total - current_time #if current_stop != starting_stop else 0 #do current cost nalezy dodac czas oczekiwania na przystanku ale moze nie
+            
+            transfer_penalty = 20 if (current_line is not None and neighbor_edge.line != current_line) else 0
+            
+            total_edge_cost = neighbor_edge.travel_time + wait_time + transfer_penalty
+            new_cost = current_cost + total_edge_cost
+            
+            # next_stop = neighbor_edge.end
+            # next_stop_cost = distance[next_stop]
             #additional_cost
             
-            if current_cost + neighbor_edge.travel_time < next_stop_cost:
-                distance[next_stop] = current_cost + neighbor_edge.travel_time
-                previous[next_stop] = (current_stop, neighbor_edge)  # Store edge info
-                heapq.heappush(priority_queue, (distance[next_stop], neighbor_edge.arr_time, next_stop))
-
-    # Path reconstruction with line and time info
-    print(f"\nShortest path from {starting_stop_name} to {destination_stop_name} at {start_time}:")
-    
-    path = []
-    current = destination_stop
-    while current != starting_stop:
-        prev_node, edge_used = previous[current]
-        if prev_node is None:  # No path exists
-            print("No complete path found!")
-            return
-        path.append((prev_node, edge_used, current))
-        current = prev_node
-    
-    # Print in chronological order
-    path.reverse()
-    print(f"Start at {starting_stop.name} (Time: {start_time})")
-    for prev_node, edge, current_node in path:
-        print(f"  → Take line {edge.line} at {edge.dep_time} from {prev_node.name}")
-        print(f"    → Arrive at {current_node.name} at {edge.arr_time} ({edge.travel_time} mins)")
-    
-    print(f"\nTotal travel time: {distance[destination_stop]} minutes")
-    
-    
-#old/experimental
-def find_dijkstra_path(graph, starting_stop_name, destination_stop_name, start_time):
-    #if gdy cos jest koncowym przystankiem to spradzamy czy wsyzstkie krawedzie byly sprawdzone
-    
-    #firstly, check if the stop even exists
-    starting_stop = graph.get_node(starting_stop_name)
-    destination_stop = graph.get_node(destination_stop_name)
-    if starting_stop is None:
-        print("Starting stop not found")
-        return
-    
-    #distance table
-    distance = {}
-    for node in graph.get_nodes():
-        distance[node] = float('inf') if node != starting_stop else 0
-        
-    #previous node - now stores (node, edge) pairs
-    previous = {}
-    for node in graph.get_nodes():
-        previous[node] = (None, None)  # (previous_node, edge_used)
-    
-    #priority queue
-    visited = set()
-    priority_queue = [(0, start_time, starting_stop)]
-    
-    while priority_queue:
-        current_cost, current_time, current_stop  = heapq.heappop(priority_queue)
-        if current_stop in visited:
-            continue
-
-        visited.add(current_stop)
-        
-        if current_stop == destination_stop:
-            break
-
-        #do current cost nalezy dodac czas oczekiwania na przystanku
-        
-        for neighbor_edge in current_stop.get_outgoing_edges():
-            next_stop = neighbor_edge.end
-            next_stop_cost = distance[next_stop]
-            # print(pd.to_datetime(neighbor_edge.dep_time)) #2025-03-24 07:14:00
-            # print(pd.to_datetime(current_time)) #2025-03-24 15:49:00
-            #get time difference in int (minutes) from the two timestamps above, while handling the case when the time difference is negative
-            #jak sie zegar obraca wokol doby to dupa
-            additional_wait_cost = (pd.to_datetime(neighbor_edge.dep_time) - pd.to_datetime(current_time)).seconds // 60
-            if additional_wait_cost < 0:
-                print(additional_wait_cost)
-                # additional_wait_cost = 1440 + additional_wait_cost
+            arr_total = time_to_minutes(neighbor_edge.arr_time)
             
-            if current_cost + neighbor_edge.travel_time + additional_wait_cost < next_stop_cost:
-                distance[next_stop] = current_cost + neighbor_edge.travel_time + additional_wait_cost
-                previous[next_stop] = (current_stop, neighbor_edge)  # Store edge info
-                heapq.heappush(priority_queue, (distance[next_stop], neighbor_edge.arr_time, next_stop))
+            if new_cost < distance[neighbor_edge.end]:
+                distance[neighbor_edge.end] = new_cost
+                previous[neighbor_edge.end] = (current_stop, neighbor_edge, neighbor_edge.line)
+                heapq.heappush(priority_queue, (new_cost, neighbor_edge.end, neighbor_edge.line, arr_total)) #(total_cost, current_stop, current_line, current_time)
 
-    # Path reconstruction with line and time info
+
+    #path reconstruction with line and time info
     print(f"\nShortest path from {starting_stop_name} to {destination_stop_name} at {start_time}:")
     
     path = []
     current = destination_stop
     while current != starting_stop:
-        prev_node, edge_used = previous[current]
-        if prev_node is None:  # No path exists
+        prev_node, edge_used, line_used = previous[current]
+        if prev_node is None:
             print("No complete path found!")
             return
-        path.append((prev_node, edge_used, current))
+        path.append((prev_node, edge_used, current, line_used))
         current = prev_node
     
-    # Print in chronological order
+    #elegant print
     path.reverse()
     print(f"Start at {starting_stop.name} (Time: {start_time})")
-    for prev_node, edge, current_node in path:
-        print(f"  → Take line {edge.line} at {edge.dep_time} from {prev_node.name}")
+    current_line = None
+    for prev_node, edge, current_node, line in path:
+        if line != current_line:
+            print(f"  → Change to line {line} at {prev_node.name}")
+            current_line = line
+        print(f"    → Depart at {edge.dep_time} from {prev_node.name}")
         print(f"    → Arrive at {current_node.name} at {edge.arr_time} ({edge.travel_time} mins)")
     
     print(f"\nTotal travel time: {distance[destination_stop]} minutes")
+    
 
 #Node: (name, outgoing_edges)
 class Node:
@@ -189,8 +211,8 @@ class Node:
             return self.name == other.name
         return False
     
+    #arbitrary but necessary for heapq
     def __lt__(self, other):
-        #arbitrary but necessary for heapq
         return self.name < other.name
 
     
@@ -199,11 +221,8 @@ class Node:
         
     def __str__(self):
         return f"Node({self.name}, lat={self.lat}, lon={self.lon})"
+     
         
-        
-
-#MOD: KRAWEDZ MA LISTE CZASOW?
-
 #Edge: (start, end, line, dep_time, arr_time, travel_time)
 class Edge:
     def __init__(self, start, end, line, dep_time, arr_time, travel_time):
@@ -224,7 +243,6 @@ class Edge:
         
     def __str__(self):
         return f"Edge({self.start}, {self.end}, line={self.line}, dep_time={self.dep_time}, arr_time={self.arr_time}, travel_time={self.travel_time})"
-
 
 
 class Graph:
@@ -249,7 +267,6 @@ class Graph:
     
     def get_edges(self):
         return self.edges
-
 
 
 def get_graph():
@@ -282,7 +299,6 @@ def get_graph():
                 if arr_h >= 24:
                     arr_time = f"{(arr_h-24):02d}:{(arr_m):02d}:00"
 
-                # Get or create nodes
                 if start not in unique_nodes:
                     unique_nodes[start] = Node(start, start_stop_lat, start_stop_lon)
                 if end not in unique_nodes:
@@ -297,23 +313,18 @@ def get_graph():
             except Exception as e:
                 print(f"Error in line {data_row}: {e}")
 
-    # Now add the outgoing edges
     for edge in unique_edges:
         edge.start.add_outgoing_edge(edge)
         
     return Graph(list(unique_nodes.values()), list(unique_edges))
     
     
-    
-
-#debug
+#debug 1
 def print_random_nodes_with_edges(graph, num_nodes=10):
-    # Make sure there are at least 'num_nodes' nodes in the graph
     if len(graph.nodes) < num_nodes:
         print(f"Graph has fewer than {num_nodes} nodes. Printing all nodes instead.")
         num_nodes = len(graph.nodes)
     
-    # Randomly select 'num_nodes' nodes from the graph
     random_nodes = random.sample(graph.nodes, num_nodes)
     
     for node in random_nodes:
@@ -322,7 +333,7 @@ def print_random_nodes_with_edges(graph, num_nodes=10):
         for edge in node.get_outgoing_edges():
             print(f"  - {edge}")
             
-
+#debug 2
 def print_edges_of_node(graph, nodename):
     node = graph.get_node(nodename)
     print(f"\nNode: {node}")
@@ -335,18 +346,13 @@ def print_edges_of_node(graph, nodename):
 if __name__ == "__main__":
     print("Begin graph initialization...")
     graph = get_graph()
-    # print("\nEdges:")
-    # for edge in graph.edges:
-    #     print(edge)
-    # print("\nNodes:")
-    # for node in graph.nodes:
-    #     print(node)
     print(f"Graph has {len(graph.nodes)} nodes and {len(graph.edges)} edges.")
     for edge in graph.edges:
         if edge.start == "most Grunwaldzki" and edge.end == "PL. GRUNWALDZKI":
             print(edge)
-    #print_random_nodes_with_edges(graph)
-    #print_edges_of_node(graph, "PL. GRUNWALDZKI")
+    #two tests
     find_dijkstra_path(graph, "PL. GRUNWALDZKI", "Wrocławski Park Przemysłowy", "15:49")
     find_dijkstra_path(graph, "Stalowa", "PL. GRUNWALDZKI", "15:49")
+    find_dijkstra_path(graph, "PL. GRUNWALDZKI", "Wrocławski Park Przemysłowy", "15:51")
+    find_dijkstra_path(graph, "Stalowa", "PL. GRUNWALDZKI", "15:51")
     

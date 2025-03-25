@@ -21,3 +21,14 @@ nastepnie wierzcholek u czynimy poprzednikiem w - p(w) = u
 
 wazne:
 trzeba znalezc czas 
+
+
+
+
+
+previous - (stop, line, arrival, depart)
+
+
+conclusion:
+
+the line that arrives the quickest and is travelling in a good direction is being taken.
