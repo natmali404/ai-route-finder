@@ -1,15 +1,15 @@
 import csv
 import heapq
 import random
+from datetime import datetime
 
 #time helpers
 def time_to_minutes(time_str):
-    """Convert time string (HH:MM or HH:MM:SS) to minutes since midnight, handling times > 23:59"""
     parts = list(map(int, time_str.split(':')))
     h = parts[0]
     m = parts[1]
     
-    # Handle times that wrap around midnight (e.g., 24:05 becomes 00:05)
+    #handle times that wrap around midnight (e.g., 24:05 becomes 00:05)
     return (h % 24) * 60 + m
 
 
@@ -18,10 +18,17 @@ def minutes_to_time(minutes):
     m = minutes % 60
     return f"{h:02d}:{m:02d}:00"
 
+def format_time(timestamp):
+    return timestamp.strftime("%Y-%m-%d %H:%M:%S.%f")[:-4]
+
+def log(message):
+    print(f"[{format_time(datetime.now())}] {message}")
+
 
 #path, cost = simplified_dijkstra(G, "PL. GRUNWALDZKI", "Wrocławski Park Przemysłowy", "23:49")
 #CURRENT BEST VERSION!! 23:43
 def find_dijkstra_path(graph, starting_stop_name, destination_stop_name, start_time):
+    start_algorithm_time = datetime.now()
     #check if the stop even exists
     starting_stop = graph.get_node(starting_stop_name)
     destination_stop = graph.get_node(destination_stop_name)
@@ -80,19 +87,23 @@ def find_dijkstra_path(graph, starting_stop_name, destination_stop_name, start_t
                 previous[neighbor_edge.end] = (current_stop, neighbor_edge, neighbor_edge.line)
                 heapq.heappush(priority_queue, (new_cost, arr_total, neighbor_edge.end, neighbor_edge.line))
 
-        # Path reconstruction with line and time info
+    stop_algorithm_time = datetime.now()
+    log(f"Dijkstra execution time: {stop_algorithm_time - start_algorithm_time} seconds")
+
     print(f"\nShortest path from {starting_stop_name} to {destination_stop_name} at {start_time}:")
+    
     
     path = []
     current = destination_stop
     while current != starting_stop:
-        prev_node, edge_used, line_used = previous[current]  # Now unpacking 3 values
-        if prev_node is None:  # No path exists
-            print("No complete path found!")
+        prev_node, edge_used, line_used = previous[current]
+        if prev_node is None:
+            print("no complete path found")
             return
         path.append((prev_node, edge_used, current, line_used))
         current = prev_node
     
+    #path reconstruction by le chatgpt  cuz idk anymore
     # Print in chronological order
     path.reverse()
     print(f"Start at {starting_stop.name} (Time: {start_time})")
@@ -270,6 +281,7 @@ def get_graph():
     unique_edges = set()
 
     with open('connection_graph.csv', newline='', encoding='utf-8') as csvfile:
+        time_start = datetime.now()
         reader = csv.DictReader(csvfile)
         for data_row in reader:
             try:
@@ -295,7 +307,6 @@ def get_graph():
                 if arr_h >= 24:
                     arr_time = f"{(arr_h-24):02d}:{(arr_m):02d}:00"
 
-                # Get or create nodes
                 if start not in unique_nodes:
                     unique_nodes[start] = Node(start, start_stop_lat, start_stop_lon)
                 if end not in unique_nodes:
@@ -310,10 +321,11 @@ def get_graph():
             except Exception as e:
                 print(f"Error in line {data_row}: {e}")
 
-    # Now add the outgoing edges
     for edge in unique_edges:
         edge.start.add_outgoing_edge(edge)
         
+    time_stop = datetime.now()
+    log(f"Graph initialization time: {time_stop - time_start} seconds")
     return Graph(list(unique_nodes.values()), list(unique_edges))
     
     
@@ -321,12 +333,10 @@ def get_graph():
 
 #debug
 def print_random_nodes_with_edges(graph, num_nodes=10):
-    # Make sure there are at least 'num_nodes' nodes in the graph
     if len(graph.nodes) < num_nodes:
         print(f"Graph has fewer than {num_nodes} nodes. Printing all nodes instead.")
         num_nodes = len(graph.nodes)
     
-    # Randomly select 'num_nodes' nodes from the graph
     random_nodes = random.sample(graph.nodes, num_nodes)
     
     for node in random_nodes:
