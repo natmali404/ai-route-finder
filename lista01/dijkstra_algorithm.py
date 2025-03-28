@@ -1,250 +1,72 @@
-import networkx as nx
+from datetime import datetime
 import heapq
-import pandas as pd
-#algorytm wyszukiwania najkrótszej ścieżki z A do B za pomocą algorytmu algorytmem Dijkstry w oparciu o kryterium czasu (10 punktów)
+from utils import time_to_minutes, print_path, log, reconstruct_path, print_path, calculate_total_travel_time
+from graph import Graph, Node, Edge
 
-# 1 budowanie grafu
 
-# wierzcholki to przystanki
-# krawedzie to przejazdy: linia, czas przejazdu itp
-
-# https://www.youtube.com/watch?v=IG1QioWSXRI
-def dijkstra_search(graph, start_stop, end_stop, arrival_time):
-    print(f"Dijkstra search: \n {arrival_time}: {start_stop}->{end_stop}")
+#CURRENT BEST VERSION but trying to modify
+def find_dijkstra_path(graph, starting_stop_name, destination_stop_name, start_time):
+    start_algorithm_time = datetime.now()
+    #check if the stop even exists
+    starting_stop = graph.get_node(starting_stop_name)
+    destination_stop = graph.get_node(destination_stop_name)
     
-    #find the start stop
-    if not graph.has_node(start_stop):
-        raise ValueError(f"Stop '{start_stop}' does not exist.")
-    if not graph.has_node(end_stop):
-        raise ValueError(f"Stop '{end_stop}' does not exist.")
+    # od razu mozesz tez dest sprawdzic
+    if starting_stop is None:
+        print("Starting stop not found")
+        return
     
-    shortest_distance = {}
-    allNodes = graph.nodes
-    path = []
+    start_total = time_to_minutes(start_time)
     
-    # for neighbor in graph.successors(start_stop):
+    distance = {}
+    previous = {}
+    transfers = {}
+    for node in graph.get_nodes():
+        distance[node] = float('inf')
+        previous[node] = (None, None, None)  #previous: (prev_node, edge_used, current_line)
+        transfers[node] = float('inf')
+    distance[starting_stop] = 0
+    transfers[starting_stop] = 0
     
-    #jesli mamy kilka tras o takich samych czasach, priorytet ma zawsze ta sama linia
-        
-    costs = {node: float('inf') for node in graph.nodes()}
-    costs[start_stop] = 0
-    previous = {node: None for node in graph.nodes()} #prev node on the shortest path
-    
-    priority_queue = []
-    heapq.heappush(priority_queue, (0, start_stop, arrival_time))
-    
+    # priority_queue = [(0, starting_stop, None, start_total)] #pq: (total_cost, current_stop, current_line, current_time)
+    # Priority queue: (transfer_count, total_cost, stop, current_line, current_time)
+    priority_queue = [(0, 0, starting_stop, None, start_total)]  
     
     while priority_queue:
+        current_transfers, current_cost, current_stop, current_line, current_time = heapq.heappop(priority_queue)
         
-        current_cost, current_stop, current_time = heapq.heappop(priority_queue)
-        
-        if current_stop == end_stop:
+        # smierdzi mi tutaj
+        if current_stop == destination_stop:
             break
-        
-        for neighbor in graph.successors(current_stop):
-            edge_data = graph.get_edge_data(current_stop, neighbor)
 
-            # Znalezienie najwcześniejszego dostępnego połączenia
-            best_option = None
-            for key, data in edge_data.items():
-                dep_time = pd.to_datetime(data['dep_time'])
-                arr_time = pd.to_datetime(data['arr_time'])
-                weight = data['weight']
-                line = data['line']
-
-                # Jeśli odjazd jest późniejszy niż obecny czas podróży
-                if dep_time >= pd.to_datetime(current_time):
-                    wait_time = (dep_time - pd.to_datetime(current_time)).total_seconds() / 60  # W minutach
-                    new_cost = current_cost + weight + wait_time  # Dodanie czasu oczekiwania
-
-                    if best_option is None or new_cost < best_option[0]:
-                        best_option = (new_cost, neighbor, arr_time, line, dep_time)
-
-            # Jeśli znaleziono najlepszą opcję dla danego przystanku, aktualizujemy koszt
-            if best_option:
-                new_cost, neighbor, arr_time, line, dep_time = best_option
-                if new_cost < costs[neighbor]:
-                    #print(f"New shortest found for {neighbor}: {current_stop}, {line}, {dep_time}")
-                    costs[neighbor] = new_cost
-                    previous[neighbor] = (current_stop, line, dep_time) #dep time??
-                    heapq.heappush(priority_queue, (new_cost, neighbor, arr_time))
-                        
-    #path reconstruct
-    path = []
-    current = end_stop
-    while current is not None:
-        if previous[current] is not None:  # Sprawdź, czy previous[current] nie jest None
-            path.append((current, previous[current][1], previous[current][2]))  # (przystanek, linia, czas odjazdu)
-        else:
-            path.append((current, None, None))  # Dla przystanku początkowego
-        current = previous[current][0] if previous[current] else None
-    path.reverse()
-    
-    print("Najkrótsza ścieżka:")
-    for stop in path:
-        if stop[1]:  # Pomijaj None dla przystanku początkowego
-            print(f"{stop[0]} - linia {stop[1]} o godz. {stop[2]}")
-    print(f"Całkowity czas podróży: {costs[end_stop]} minut")
-    #get all routes starting at the nearest time to arrival_time
-    
-    #begin dijkstra search
-
-
-    #funkcja kosztu
-
-
-def optimized_dijkstra(graph, start_stop, end_stop, arrival_time):
-    print(f"Optimized Dijkstra search: {arrival_time}: {start_stop}->{end_stop}")
-    
-    # Validate input
-    if not graph.has_node(start_stop) or not graph.has_node(end_stop):
-        raise ValueError(f"Stop '{start_stop}' or '{end_stop}' does not exist.")
-    
-    # Initial data structures
-    costs = {node: float('inf') for node in graph.nodes()}
-    costs[start_stop] = 0
-    previous = {node: None for node in graph.nodes()}
-    
-    # Use a dictionary to track nodes in queue for efficient updates
-    in_queue = {start_stop: 0}
-    visited = set()
-    
-    # Priority queue with (cost, node_id, time)
-    priority_queue = [(0, start_stop, pd.to_datetime(arrival_time))]
-    
-    while priority_queue:
-        current_cost, current_stop, current_time = heapq.heappop(priority_queue)
-        
-        # If this entry is outdated (we found a better path already), skip it
-        if current_cost > in_queue.get(current_stop, float('inf')):
-            continue
+        for neighbor_edge in current_stop.get_outgoing_edges():
             
-        # Remove from tracking as we're processing it now
-        in_queue.pop(current_stop, None)
-        
-        # If we reached destination, we're done
-        if current_stop == end_stop:
-            break
-        
-        # Mark as visited to avoid reprocessing
-        visited.add(current_stop)
-        
-        # Process all neighbors
-        for neighbor in graph.successors(current_stop):
-            if neighbor in visited:
+            dep_total = time_to_minutes(neighbor_edge.dep_time)
+            
+            if dep_total < current_time: #consider only edges that depart after current time?
                 continue
-                
-            edge_data = graph.get_edge_data(current_stop, neighbor)
-            best_connection = None
-            best_cost = float('inf')
             
-            # Find the earliest valid connection
-            for _, data in edge_data.items():
-                dep_time = pd.to_datetime(data['dep_time'])
-                arr_time = pd.to_datetime(data['arr_time'])
-                travel_time = data['weight']
-                line = data['line']
-                
-                # Skip connections that leave before we arrive
-                if dep_time < current_time:
-                    continue
-                    
-                # Calculate total cost including waiting time
-                wait_time = (dep_time - current_time).total_seconds() / 60
-                new_cost = current_cost + travel_time + wait_time
-                
-                # Keep track of the best connection
-                if new_cost < best_cost:
-                    best_cost = new_cost
-                    best_connection = (neighbor, arr_time, line, dep_time)
+            #something could be wrong here - maybe?
+            wait_time = dep_total - current_time # if current_stop != starting_stop else 0 #<- better results but RANDOM
             
-            # If we found a valid connection and it's better than what we had
-            if best_connection and best_cost < costs[neighbor]:
-                neighbor, arr_time, line, dep_time = best_connection
-                costs[neighbor] = best_cost
-                previous[neighbor] = (current_stop, line, dep_time)
-                
-                # Add to queue if not already there, or update if better
-                in_queue[neighbor] = best_cost
-                heapq.heappush(priority_queue, (best_cost, neighbor, arr_time))
-    
-    # Path reconstruction (same as before)
-    path = []
-    current = end_stop
-    while current is not None:
-        if previous[current] is not None:
-            path.append((current, previous[current][1], previous[current][2]))
-        else:
-            path.append((current, None, None))
-        current = previous[current][0] if previous[current] else None
-    path.reverse()
-    
-    # Print results
-    print("Shortest path:")
-    for stop in path:
-        if stop[1]:
-            print(f"{stop[0]} - line {stop[1]} at {stop[2]}")
-    print(f"Total travel time: {costs[end_stop]} minutes")
-    
-    return path, costs[end_stop]
-
-
-def simplified_dijkstra(graph, start_stop, end_stop, arrival_time):
-    if not graph.has_node(start_stop) or not graph.has_node(end_stop):
-        raise ValueError(f"Stop '{start_stop}' or '{end_stop}' does not exist.")
-    
-    costs = {node: float('inf') for node in graph.nodes()}
-    costs[start_stop] = 0
-    previous = {node: None for node in graph.nodes()}
-    
-    # Single priority queue
-    priority_queue = [(0, start_stop, pd.to_datetime(arrival_time))]
-    visited = set()
-    
-    while priority_queue:
-        current_cost, current_stop, current_time = heapq.heappop(priority_queue)
-        
-        if current_stop in visited:
-            continue
+            #penalties
+            new_transfer_count = current_transfers + (1 if (current_line is not None and neighbor_edge.line != current_line) else 0)
+            transfer_penalty = 20 if (current_line is not None and neighbor_edge.line != current_line) else 0
             
-        if current_stop == end_stop:
-            break
+            total_edge_cost = neighbor_edge.travel_time + wait_time + transfer_penalty
+            new_cost = current_cost + total_edge_cost
             
-        visited.add(current_stop)
-        
-        for neighbor in graph.successors(current_stop):
-            if neighbor in visited:
-                continue
-                
-            best_cost = float('inf')
-            best_data = None
+            arr_total = time_to_minutes(neighbor_edge.arr_time)
             
-            for _, data in graph.get_edge_data(current_stop, neighbor).items():
-                dep_time = pd.to_datetime(data['dep_time'])
+            if new_cost < distance[neighbor_edge.end]:
+                distance[neighbor_edge.end] = new_cost
+                transfers[neighbor_edge.end] = new_transfer_count
+                previous[neighbor_edge.end] = (current_stop, neighbor_edge, neighbor_edge.line)
+                heapq.heappush(priority_queue, (new_transfer_count, new_cost, neighbor_edge.end, neighbor_edge.line, arr_total)) #(total_cost, current_stop, current_line, current_time)
                 
-                if dep_time < current_time:
-                    continue
-                    
-                wait_time = (dep_time - current_time).total_seconds() / 60
-                new_cost = current_cost + data['weight'] + wait_time
-                
-                if new_cost < best_cost:
-                    best_cost = new_cost
-                    best_data = (data['arr_time'], data['line'], dep_time, data['arr_time'])
-            
-            if best_data and best_cost < costs[neighbor]:
-                costs[neighbor] = best_cost
-                previous[neighbor] = (current_stop, best_data[1], best_data[2], best_data[3])
-                heapq.heappush(priority_queue, (best_cost, neighbor, pd.to_datetime(best_data[0])))
+    stop_algorithm_time = datetime.now()
+    log(f"Dijkstra execution time: {stop_algorithm_time - start_algorithm_time} seconds")
     
-    # Simplified path reconstruction
-    path = []
-    current = end_stop
-    while current:
-        prev_data = previous[current]
-        path.append((current, None if not prev_data else prev_data[1], 
-                    None if not prev_data else prev_data[2], None if not prev_data else prev_data[3]))
-        current = None if not prev_data else prev_data[0]
-    
-    return path[::-1], costs[end_stop]
-
+    path, final_arrival_time = reconstruct_path(previous, starting_stop, destination_stop)
+    total_travel_time = calculate_total_travel_time(start_total, final_arrival_time)
+    print_path(path, starting_stop_name, start_time, total_travel_time, distance[destination_stop])
