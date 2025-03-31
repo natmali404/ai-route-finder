@@ -66,4 +66,4 @@ def find_dijkstra_path(graph, starting_stop_name, destination_stop_name, start_t
     #print(path)
     path, final_arrival_time = reconstruct_path(previous, starting_stop, destination_stop)
     total_travel_time = calculate_total_travel_time(start_total, final_arrival_time)
-    print_path(path, starting_stop_name, start_time, total_travel_time, distance[destination_stop])
+    print_path(path, starting_stop_name, start_time, total_travel_time)

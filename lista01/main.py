@@ -1,8 +1,9 @@
 import random
 from graph import Graph, Node, Edge
-from utils import get_graph
+from utils import get_graph, print_path
 from dijkstra_algorithm import find_dijkstra_path
 from a_algorithm import find_a_star_path
+from tabu_search import find_tabu_search_path
 
 #debug 1
 def print_random_nodes_with_edges(graph, num_nodes=10):
@@ -44,6 +45,9 @@ if __name__ == "__main__":
     #find_dijkstra_path(graph, "Mokra", "Lekarska", "12:00")
     #find_dijkstra_path(graph, "Przejazdowa", "PL. GRUNWALDZKI", "12:00")
     # find_a_star_path(graph, "PL. GRUNWALDZKI", "Wrocławski Park Przemysłowy", "15:49", 'euclidean')
-    # find_a_star_path(graph, "PL. GRUNWALDZKI", "Wrocławski Park Przemysłowy", "15:49", 'manhattan')
-    find_a_star_path(graph, "Kątna", "Klęka", "12:00", 'euclidean')
-    find_a_star_path(graph, "Kątna", "Klęka", "12:00", 'manhattan')
+    path, total_travel_time = find_a_star_path(graph, "PL. GRUNWALDZKI", "Wrocławski Park Przemysłowy", "15:49", 'manhattan')
+    print_path(path, "PL. GRUNWALDZKI", "15:49", total_travel_time)
+    path, total_travel_time = find_a_star_path(graph, "Kątna", "Klęka", "12:00", 'euclidean')
+    print_path(path, "Kątna", "12:00", total_travel_time)
+    #find_a_star_path(graph, "Kątna", "Klęka", "12:00", 'manhattan')
+    #find_tabu_search_path(graph, "PL. GRUNWALDZKI", ['Wrocławski Park Przemysłowy', 'Arkady (Capitol)', 'pl. Wróblewskiego'], '12:00', 't')

@@ -100,7 +100,7 @@ def reconstruct_path(previous, starting_stop, destination_stop):
     return path, final_arrival_time
 
 #chatgpt formatting
-def print_path(path, starting_stop_name, start_time, total_travel_time, distance):
+def print_path(path, starting_stop_name, start_time, total_travel_time):
     """ Prints the formatted shortest path based on the reconstructed path list. """
     if path is None:
         print("No complete path found!")

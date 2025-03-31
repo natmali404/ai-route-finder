@@ -27,6 +27,9 @@ class Node:
         
     def __str__(self):
         return f"Node({self.name}, lat={self.lat}, lon={self.lon})"
+    
+    def __repr__(self):
+        return f"Node(name='{self.name}', lat={self.lat}, lon={self.lon})"
      
        
         
@@ -50,6 +53,12 @@ class Edge:
         
     def __str__(self):
         return f"Edge({self.start}, {self.end}, line={self.line}, dep_time={self.dep_time}, arr_time={self.arr_time}, travel_time={self.travel_time})"
+    
+    def __repr__(self):
+        return (
+            f"Edge(start={self.start.name}, end={self.end.name}, "
+            f"line='{self.line}', dep_time={self.dep_time}, arr_time={self.arr_time}, travel_time={self.travel_time})"
+        )
 
 
 
