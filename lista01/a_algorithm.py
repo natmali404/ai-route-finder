@@ -82,7 +82,7 @@ def find_a_star_path(graph, start_name, dest_name, start_time, heuristic='euclid
     
     path, final_arrival_time = reconstruct_path(previous, start_node, dest_node)
     total_travel_time = calculate_total_travel_time(start_total, final_arrival_time)
-    print(f'PATH: {path}')
-    return path, total_travel_time
+    #print(f'PATH: {path}')
+    return path, total_travel_time, distance[dest_node]
     # 
     # 
