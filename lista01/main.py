@@ -2,6 +2,7 @@ import random
 from graph import Graph, Node, Edge
 from utils import get_graph
 from dijkstra_algorithm import find_dijkstra_path
+from a_algorithm import find_a_star_path
 
 #debug 1
 def print_random_nodes_with_edges(graph, num_nodes=10):
@@ -35,10 +36,14 @@ if __name__ == "__main__":
         if edge.start == "most Grunwaldzki" and edge.end == "PL. GRUNWALDZKI":
             print(edge)
     #tests
-    find_dijkstra_path(graph, "PL. GRUNWALDZKI", "Wrocławski Park Przemysłowy", "15:49")
+    #find_dijkstra_path(graph, "PL. GRUNWALDZKI", "Wrocławski Park Przemysłowy", "15:49")
     # find_dijkstra_path(graph, "Stalowa", "PL. GRUNWALDZKI", "15:49")
     # find_dijkstra_path(graph, "PL. GRUNWALDZKI", "Wrocławski Park Przemysłowy", "15:51")
     # find_dijkstra_path(graph, "Stalowa", "PL. GRUNWALDZKI", "15:51")
-    # find_dijkstra_path(graph, "Kątna", "Klęka", "12:00")
-    find_dijkstra_path(graph, "Mokra", "Lekarska", "12:00")
-    
+    find_dijkstra_path(graph, "Kątna", "Klęka", "12:00")
+    #find_dijkstra_path(graph, "Mokra", "Lekarska", "12:00")
+    #find_dijkstra_path(graph, "Przejazdowa", "PL. GRUNWALDZKI", "12:00")
+    # find_a_star_path(graph, "PL. GRUNWALDZKI", "Wrocławski Park Przemysłowy", "15:49", 'euclidean')
+    # find_a_star_path(graph, "PL. GRUNWALDZKI", "Wrocławski Park Przemysłowy", "15:49", 'manhattan')
+    find_a_star_path(graph, "Kątna", "Klęka", "12:00", 'euclidean')
+    find_a_star_path(graph, "Kątna", "Klęka", "12:00", 'manhattan')

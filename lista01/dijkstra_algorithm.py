@@ -7,12 +7,10 @@ from graph import Graph, Node, Edge
 #CURRENT BEST VERSION but trying to modify
 def find_dijkstra_path(graph, starting_stop_name, destination_stop_name, start_time):
     start_algorithm_time = datetime.now()
-    #check if the stop even exists
     starting_stop = graph.get_node(starting_stop_name)
     destination_stop = graph.get_node(destination_stop_name)
     
-    # od razu mozesz tez dest sprawdzic
-    if starting_stop is None:
+    if starting_stop is None or destination_stop is None:
         print("Starting stop not found")
         return
     
@@ -23,19 +21,18 @@ def find_dijkstra_path(graph, starting_stop_name, destination_stop_name, start_t
     transfers = {}
     for node in graph.get_nodes():
         distance[node] = float('inf')
-        previous[node] = (None, None, None)  #previous: (prev_node, edge_used, current_line)
+        previous[node] = (None, None, None)
         transfers[node] = float('inf')
     distance[starting_stop] = 0
     transfers[starting_stop] = 0
     
-    # priority_queue = [(0, starting_stop, None, start_total)] #pq: (total_cost, current_stop, current_line, current_time)
-    # Priority queue: (transfer_count, total_cost, stop, current_line, current_time)
+    #priority queue: (transfer_count, total_cost, stop, current_line, current_time)
     priority_queue = [(0, 0, starting_stop, None, start_total)]  
     
     while priority_queue:
         current_transfers, current_cost, current_stop, current_line, current_time = heapq.heappop(priority_queue)
         
-        # smierdzi mi tutaj
+        # ?
         if current_stop == destination_stop:
             break
 
@@ -66,7 +63,7 @@ def find_dijkstra_path(graph, starting_stop_name, destination_stop_name, start_t
                 
     stop_algorithm_time = datetime.now()
     log(f"Dijkstra execution time: {stop_algorithm_time - start_algorithm_time} seconds")
-    
+    #print(path)
     path, final_arrival_time = reconstruct_path(previous, starting_stop, destination_stop)
     total_travel_time = calculate_total_travel_time(start_total, final_arrival_time)
     print_path(path, starting_stop_name, start_time, total_travel_time, distance[destination_stop])
