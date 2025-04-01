@@ -2,6 +2,7 @@ from datetime import datetime
 import heapq
 from utils import time_to_minutes, print_path, log, reconstruct_path, print_path, calculate_total_travel_time
 from graph import Graph, Node, Edge
+import math
 
 
     
@@ -24,7 +25,7 @@ def find_dijkstra_path(graph, starting_stop_name, destination_stop_name, start_t
     distance[starting_stop] = 0
     earliest_arrival[starting_stop] = start_total
     
-    # Priority queue: (earliest_arrival, total_cost, current_stop, current_line)
+    #priority queue: (transfer_count, earliest_arrival, total_cost, current_stop, current_line)
     priority_queue = [(0, start_total, 0, starting_stop, None)]
     heapq.heapify(priority_queue)
     
@@ -32,7 +33,7 @@ def find_dijkstra_path(graph, starting_stop_name, destination_stop_name, start_t
         # current_transfers, current_cost, current_stop, current_line, current_time = heapq.heappop(priority_queue)
         current_transfers, current_time, current_cost, current_stop, current_line = heapq.heappop(priority_queue)
         
-        # Skip if we've already found a better path to this node
+        #skip if we've already found a better path to this node
         if current_time > earliest_arrival[current_stop]:
             continue
         
@@ -41,6 +42,8 @@ def find_dijkstra_path(graph, starting_stop_name, destination_stop_name, start_t
             break
 
         for neighbor_edge in current_stop.get_outgoing_edges():
+
+
             
             dep_total = time_to_minutes(neighbor_edge.dep_time)
             arr_total = time_to_minutes(neighbor_edge.arr_time)
@@ -56,13 +59,24 @@ def find_dijkstra_path(graph, starting_stop_name, destination_stop_name, start_t
             # transfer_penalty = 20 if (current_line is not None and neighbor_edge.line != current_line) else 0
             
             if criteria == 't':  # Time-optimized
-                total_edge_cost = neighbor_edge.travel_time + wait_time
+                total_edge_cost = (10 if (current_line and neighbor_edge.line != current_line) else 0) + neighbor_edge.travel_time + wait_time
             elif criteria == 'p':  # Transfer-optimized
-                total_edge_cost = (100 if (current_line and neighbor_edge.line != current_line) else 0)+ wait_time + neighbor_edge.travel_time
+                total_edge_cost = (math.pow(15,new_transfer_count) if (current_line and neighbor_edge.line != current_line) else 0) + wait_time + neighbor_edge.travel_time
             
             #total_edge_cost = neighbor_edge.travel_time + wait_time + transfer_penalty
             new_cost = current_cost + total_edge_cost
             
+            
+            # if neighbor_edge.line == current_line and neighbor_edge.end != current_stop and time_to_minutes(neighbor_edge.dep_time) == current_time:
+            #     distance[neighbor_edge.end] = new_cost-1 #set a really low cost to prio it
+            #     previous[neighbor_edge.end] = (current_stop, neighbor_edge, neighbor_edge.line)
+            #     earliest_arrival[neighbor_edge.end] = arr_total
+            #     heapq.heappush(priority_queue, (new_transfer_count, arr_total, new_cost-1, neighbor_edge.end, neighbor_edge.line))
+            #     #continue
+            #     #zmniejsz koszt
+            #     #pushnij to jako najlepszy edge
+            #     #jego koszt nie moze byc nizszy niz te wczesniejsze
+            #     #break
             
             if new_cost < distance[neighbor_edge.end]:
                 distance[neighbor_edge.end] = new_cost

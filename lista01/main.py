@@ -124,7 +124,7 @@ def main():
     else:
         # path, total_time = find_dijkstra_path(graph, "PL. GRUNWALDZKI", "Wrocławski Park Przemysłowy", "14:40", 'p')
         # path, total_time = find_dijkstra_path(graph, "most Grunwaldzki", "Wrocławski Park Przemysłowy", "14:41", 'p')
-        path, total_time = find_dijkstra_path(graph, "PL. GRUNWALDZKI", "Wrocławski Park Przemysłowy", "14:40", 'p')
+        path, total_time = find_dijkstra_path(graph, "PL. GRUNWALDZKI", "Wrocławski Park Przemysłowy", "14:40", 't')
         print(f"Dijkstra Path: {path}, Total time: {total_time}")
         #print_path(path, "PL. GRUNWALDZKI", "14:40", total_time)
         print_path(path, "PL. GRUNWALDZKI", "14:40", total_time)

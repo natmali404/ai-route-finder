@@ -89,14 +89,6 @@ def minutes_to_time(minutes):
     m = minutes % 60
     return f"{h:02d}:{m:02d}"
 
-time_a = time_to_minutes("14:40")
-time_b = time_to_minutes("00:00")
-time_c = time_to_minutes("00:03")
-print(time_a)
-print(time_b)
-print(time_c)
-
-
 
 def format_time(timestamp):
     return timestamp.strftime("%Y-%m-%d %H:%M:%S.%f")[:-4]
@@ -115,6 +107,7 @@ def reconstruct_path(previous, starting_stop, destination_stop):
         prev_node, edge_used, line_used = previous.get(current, (None, None, None))
         if prev_node is None:
             return None  # No valid path found
+        print(f'{current} <- {prev_node} ({edge_used.dep_time})')
         path.append((prev_node, edge_used, current, line_used))
         current = prev_node
         
