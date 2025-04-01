@@ -24,7 +24,7 @@ def manhattan_distance(node1, node2):
     return (abs(node1.lat - node2.lat) + abs(node1.lon - node2.lon)) * 111000 #deg to m
 
 
-def find_a_star_path(graph, start_name, dest_name, start_time, heuristic='euclidean'):
+def find_a_star_path(graph, start_name, dest_name, start_time, criteria, heuristic):
     start_algorithm_time = datetime.now()
     start_node = graph.get_node(start_name)
     dest_node = graph.get_node(dest_name)
@@ -63,7 +63,7 @@ def find_a_star_path(graph, start_name, dest_name, start_time, heuristic='euclid
             
             wait_time = dep_total - current_time
             new_transfer_count = transfers[current_stop] + (1 if current_line and edge.line != current_line else 0)
-            transfer_penalty = 20 if current_line and edge.line != current_line else 0
+            transfer_penalty = 10 if current_line and edge.line != current_line else 0
             
             total_edge_cost = edge.travel_time + wait_time + transfer_penalty
             new_cost = current_cost + total_edge_cost

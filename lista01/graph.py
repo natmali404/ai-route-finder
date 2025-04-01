@@ -1,3 +1,5 @@
+import json
+
 #Node: (name, outgoing_edges)
 class Node:
     def __init__(self, name, lat, lon):
@@ -30,6 +32,7 @@ class Node:
     
     def __repr__(self):
         return f"Node(name='{self.name}', lat={self.lat}, lon={self.lon})"
+    
      
        
         
@@ -84,3 +87,63 @@ class Graph:
     
     def get_edges(self):
         return self.edges
+    
+    def to_json(self, filename):
+        """Serialize the graph to JSON file"""
+        graph_data = {
+            'nodes': [
+                {
+                    'name': node.name,
+                    'lat': node.lat,
+                    'lon': node.lon,
+                    # Note: We don't serialize outgoing_edges to avoid circular references
+                    # They will be reconstructed when loading
+                } for node in self.nodes
+            ],
+            'edges': [
+                {
+                    'start': edge.start.name,
+                    'end': edge.end.name,
+                    'line': edge.line,
+                    'dep_time': edge.dep_time,
+                    'arr_time': edge.arr_time,
+                    'travel_time': edge.travel_time
+                } for edge in self.edges
+            ]
+        }
+        with open(filename, 'w') as f:
+            json.dump(graph_data, f, indent=2)
+    
+    @classmethod
+    def from_json(cls, filename):
+        """Deserialize the graph from JSON file"""
+        with open(filename) as f:
+            graph_data = json.load(f)
+        
+        # First create all nodes
+        nodes = [
+            Node(node['name'], node['lat'], node['lon'])
+            for node in graph_data['nodes']
+        ]
+        
+        # Create a mapping from node names to node objects
+        node_dict = {node.name: node for node in nodes}
+        
+        # Then create all edges and reconstruct the graph structure
+        edges = []
+        for edge_data in graph_data['edges']:
+            start_node = node_dict[edge_data['start']]
+            end_node = node_dict[edge_data['end']]
+            
+            edge = Edge(
+                start_node,
+                end_node,
+                edge_data['line'],
+                edge_data['dep_time'],
+                edge_data['arr_time'],
+                edge_data['travel_time']
+            )
+            edges.append(edge)
+            start_node.add_outgoing_edge(edge)
+        
+        return cls(nodes, edges)

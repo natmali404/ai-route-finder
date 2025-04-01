@@ -1,9 +1,17 @@
 from datetime import datetime
+import os
+import json
 import csv
 from graph import Graph, Node, Edge
 
+GRAPH_JSON_FILE = "graph.json"  # Changed from .pkl to .json
 
 def get_graph():
+    if os.path.exists(GRAPH_JSON_FILE):
+        print("Loading graph from JSON cache...")
+        return Graph.from_json(GRAPH_JSON_FILE)
+
+    print("Generating graph from CSV...")
     unique_nodes = {}
     unique_edges = set()
     start_time = datetime.now()
@@ -52,9 +60,20 @@ def get_graph():
         edge.start.add_outgoing_edge(edge)
         
     end_time = datetime.now()
-    log(f"Graph initialization execution time: {end_time - start_time} seconds")
+    print(f"Graph initialization execution time: {end_time - start_time} seconds")
+    
+    for node in unique_nodes.values():
+        node.outgoing_edges.sort(key=lambda e: tuple(map(int, e.dep_time.split(":"))))
+
         
-    return Graph(list(unique_nodes.values()), list(unique_edges))
+    graph = Graph(list(unique_nodes.values()), list(unique_edges))
+
+    # Save to JSON file
+    graph.to_json(GRAPH_JSON_FILE)
+    
+    return graph
+
+
 
 #time helpers
 def time_to_minutes(time_str):
@@ -69,6 +88,15 @@ def minutes_to_time(minutes):
     h = minutes // 60 % 24
     m = minutes % 60
     return f"{h:02d}:{m:02d}"
+
+time_a = time_to_minutes("14:40")
+time_b = time_to_minutes("00:00")
+time_c = time_to_minutes("00:03")
+print(time_a)
+print(time_b)
+print(time_c)
+
+
 
 def format_time(timestamp):
     return timestamp.strftime("%Y-%m-%d %H:%M:%S.%f")[:-4]
