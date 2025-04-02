@@ -128,6 +128,8 @@ def main():
         print(f"Dijkstra Path: {path}, Total time: {total_time}")
         #print_path(path, "PL. GRUNWALDZKI", "14:40", total_time)
         print_path(path, "PL. GRUNWALDZKI", "14:40", total_time)
+        path, total_time = find_dijkstra_path(graph, "PL. GRUNWALDZKI", "Wrocławski Park Przemysłowy", "14:40", 'p')
+        print_path(path, "PL. GRUNWALDZKI", "14:40", total_time)
     
 
 if __name__ == "__main__":

@@ -1,4 +1,19 @@
 import json
+import bisect
+
+def time_to_minutes(time_str):
+    parts = list(map(int, time_str.split(':')))
+    h = parts[0]
+    m = parts[1]
+    
+    return (h % 24) * 60 + m
+
+
+def minutes_to_time(minutes):
+    h = minutes // 60 % 24
+    m = minutes % 60
+    return f"{h:02d}:{m:02d}"
+
 
 #Node: (name, outgoing_edges)
 class Node:
@@ -8,8 +23,11 @@ class Node:
         self.lon = lon
         self.outgoing_edges = []
         
+    # def add_outgoing_edge(self, edge):
+    #     self.outgoing_edges.append(edge)
     def add_outgoing_edge(self, edge):
-        self.outgoing_edges.append(edge)
+        # Insert the edge using bisect to maintain order by dep_minutes
+        bisect.insort(self.outgoing_edges, edge, key=lambda x: x.dep_minutes)
         
     def get_outgoing_edges(self):
         return self.outgoing_edges
@@ -45,6 +63,8 @@ class Edge:
         self.dep_time = dep_time
         self.arr_time = arr_time
         self.travel_time = travel_time
+        self.dep_minutes = time_to_minutes(dep_time)
+        self.arr_minutes = time_to_minutes(arr_time)
         
     def __eq__(self, other):
         if isinstance(other, Edge):
@@ -97,7 +117,6 @@ class Graph:
                     'lat': node.lat,
                     'lon': node.lon,
                     # Note: We don't serialize outgoing_edges to avoid circular references
-                    # They will be reconstructed when loading
                 } for node in self.nodes
             ],
             'edges': [
@@ -107,6 +126,8 @@ class Graph:
                     'line': edge.line,
                     'dep_time': edge.dep_time,
                     'arr_time': edge.arr_time,
+                    'dep_minutes': edge.dep_minutes,  # Serialize dep_minutes
+                    'arr_minutes': edge.arr_minutes,  # Serialize arr_minutes
                     'travel_time': edge.travel_time
                 } for edge in self.edges
             ]
@@ -143,6 +164,10 @@ class Graph:
                 edge_data['arr_time'],
                 edge_data['travel_time']
             )
+            # Manually assign dep_minutes and arr_minutes from JSON data
+            edge.dep_minutes = edge_data['dep_minutes']
+            edge.arr_minutes = edge_data['arr_minutes']
+            
             edges.append(edge)
             start_node.add_outgoing_edge(edge)
         
