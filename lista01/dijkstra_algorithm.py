@@ -42,7 +42,7 @@ def find_dijkstra_path(graph, starting_stop_name, destination_stop_name, start_t
         if current_time > earliest_arrival[current_stop]:
             continue
         
-        # ?
+        # ?destination found
         if current_stop == destination_stop:
             break
 
@@ -54,10 +54,6 @@ def find_dijkstra_path(graph, starting_stop_name, destination_stop_name, start_t
             if dep_total < current_time: #consider only edges that depart after current time?
                 continue
             
-            # if current_stop.name == "PL. GRUNWALDZKI":
-            #     print(neighbor_edge.dep_time)
-                
-                
             #something could be wrong here - maybe?
             wait_time = dep_total - current_time # if current_stop != starting_stop else 0 #<- better results but RANDOM
             
@@ -71,9 +67,7 @@ def find_dijkstra_path(graph, starting_stop_name, destination_stop_name, start_t
             elif criteria == 'p':  # Transfer-optimized
                 total_edge_cost = (100*new_transfer_count if (current_line and neighbor_edge.line != current_line) else 0) + wait_time + neighbor_edge.travel_time
             
-            #total_edge_cost = neighbor_edge.travel_time + wait_time + transfer_penalty
             new_cost = current_cost + total_edge_cost
-            
             
             # if neighbor_edge.line == current_line and time_to_minutes(neighbor_edge.dep_time) == current_time:
             #     new_cost -= 2
