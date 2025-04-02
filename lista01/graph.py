@@ -25,8 +25,8 @@ class Node:
         
     # def add_outgoing_edge(self, edge):
     #     self.outgoing_edges.append(edge)
+    
     def add_outgoing_edge(self, edge):
-        # Insert the edge using bisect to maintain order by dep_minutes
         bisect.insort(self.outgoing_edges, edge, key=lambda x: x.dep_minutes)
         
     def get_outgoing_edges(self):
@@ -116,7 +116,6 @@ class Graph:
                     'name': node.name,
                     'lat': node.lat,
                     'lon': node.lon,
-                    # Note: We don't serialize outgoing_edges to avoid circular references
                 } for node in self.nodes
             ],
             'edges': [
@@ -126,8 +125,8 @@ class Graph:
                     'line': edge.line,
                     'dep_time': edge.dep_time,
                     'arr_time': edge.arr_time,
-                    'dep_minutes': edge.dep_minutes,  # Serialize dep_minutes
-                    'arr_minutes': edge.arr_minutes,  # Serialize arr_minutes
+                    'dep_minutes': edge.dep_minutes,
+                    'arr_minutes': edge.arr_minutes, 
                     'travel_time': edge.travel_time
                 } for edge in self.edges
             ]
@@ -141,16 +140,13 @@ class Graph:
         with open(filename) as f:
             graph_data = json.load(f)
         
-        # First create all nodes
         nodes = [
             Node(node['name'], node['lat'], node['lon'])
             for node in graph_data['nodes']
         ]
         
-        # Create a mapping from node names to node objects
         node_dict = {node.name: node for node in nodes}
         
-        # Then create all edges and reconstruct the graph structure
         edges = []
         for edge_data in graph_data['edges']:
             start_node = node_dict[edge_data['start']]
@@ -164,7 +160,6 @@ class Graph:
                 edge_data['arr_time'],
                 edge_data['travel_time']
             )
-            # Manually assign dep_minutes and arr_minutes from JSON data
             edge.dep_minutes = edge_data['dep_minutes']
             edge.arr_minutes = edge_data['arr_minutes']
             

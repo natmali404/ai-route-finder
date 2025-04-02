@@ -94,9 +94,6 @@ def get_user_input():
         return choice, start_stop, stop_list, start_time, criteria
     else:
         return choice, None, None, None, None, None
-    # else:
-    #     print("Invalid choice. Please restart the program and choose a valid option.")
-    #     exit()
 
 def main():
     print("Initializing graph...")
@@ -105,23 +102,23 @@ def main():
     
     user_input = get_user_input()
     
-    if user_input[0] == '1':  # Dijkstra
+    if user_input[0] == '1':
         path, total_time = find_dijkstra_path(graph, user_input[1], user_input[2], user_input[3], user_input[4])
         print(f"Dijkstra Path: {path}, Total time: {total_time}")
         print_path(path, user_input[1], user_input[3], total_time)
     
-    elif user_input[0] == '2':  # A*
+    elif user_input[0] == '2':
         path, total_time, _ = find_a_star_path(graph, user_input[1], user_input[2], user_input[3], user_input[4], user_input[5])
         print(f"A* Path: {path}, Total time: {total_time}")
         print_path(path, user_input[1], user_input[3], total_time)
     
-    elif user_input[0] == '3':  # Tabu Search
+    elif user_input[0] == '3':
         solution = tabu_search(graph, user_input[1], user_input[2], user_input[3], user_input[4])
         print(f"Tabu Search Solution: {solution[0]}, Cost: {solution[1]}")
         print(f"Path: {solution[2]}")
         print_path(solution[2], user_input[1], user_input[3])
         
-    else:
+    else: #debug!!
         # path, total_time = find_dijkstra_path(graph, "PL. GRUNWALDZKI", "Wrocławski Park Przemysłowy", "14:40", 'p')
         # path, total_time = find_dijkstra_path(graph, "most Grunwaldzki", "Wrocławski Park Przemysłowy", "14:41", 'p')
         path, total_time = find_dijkstra_path(graph, "PL. GRUNWALDZKI", "Wrocławski Park Przemysłowy", "14:40", 't')

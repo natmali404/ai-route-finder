@@ -4,7 +4,7 @@ import json
 import csv
 from graph import Graph, Node, Edge
 
-GRAPH_JSON_FILE = "graph.json"  # Changed from .pkl to .json
+GRAPH_JSON_FILE = "graph.json"
 
 def get_graph():
     if os.path.exists(GRAPH_JSON_FILE):
@@ -68,7 +68,6 @@ def get_graph():
         
     graph = Graph(list(unique_nodes.values()), list(unique_edges))
 
-    # Save to JSON file
     graph.to_json(GRAPH_JSON_FILE)
     
     return graph
@@ -82,7 +81,6 @@ def time_to_minutes(time_str):
     m = parts[1]
     
     return (h % 24) * 60 + m
-
 
 def minutes_to_time(minutes):
     h = minutes // 60 % 24
@@ -98,7 +96,6 @@ def log(message):
     
     
 def reconstruct_path(previous, starting_stop, destination_stop):
-    """ Traces the path back from the destination to the start and returns a list of steps. """
     start_time = datetime.now()
     path = []
     current = destination_stop
@@ -106,55 +103,23 @@ def reconstruct_path(previous, starting_stop, destination_stop):
     while current != starting_stop:
         prev_node, edge_used, line_used = previous.get(current, (None, None, None))
         if prev_node is None:
-            return None  # No valid path found
+            return None
         print(f'{current} <- {prev_node} ({edge_used.dep_time})')
         path.append((prev_node, edge_used, current, line_used))
         current = prev_node
         
-        # Save the first (last in reversed order) arrival time
+        #save arrival time of the last edge used
         if final_arrival_time is None:
             final_arrival_time = time_to_minutes(edge_used.arr_time)
-    path.reverse()  # Reverse to get start-to-end order
+    path.reverse()
     
     stop_algorithm_time = datetime.now()
     log(f"Path reconstruction execution time: {stop_algorithm_time - start_time} seconds")
     return path, final_arrival_time
 
-#chatgpt formatting
-#TODO CHANGE THIS SO THAT IT DOESNT TAKE TOTAL TRAVEL TIME BUT CALCULATES IT SO REMOVE TOTAL TRAVEL TIME FROM ALL CALLS
 
-# old and doesnt include direction changes 
-
-# def print_path(path, starting_stop_name, start_time, total_travel_time=0):
-#     """Prints the formatted shortest path based on the reconstructed path list."""
-#     if not path:
-#         print("No complete path found!")
-#         return
-    
-#     print(f"\nShortest path from {starting_stop_name} at {start_time}:")
-#     print(f"Start at {path[0][0].name} (Time: {start_time})")
-    
-#     current_line = None
-#     last_arrival_time = start_time  # Track arrival time dynamically
-
-#     for prev_node, edge, current_node, line in path:
-#         if line != current_line:
-#             print(f"  → Change to line {line} at {prev_node.name}")
-#             current_line = line
-#         print(f"    → Depart at {edge.dep_time} from {prev_node.name}")
-#         print(f"    → Arrive at {current_node.name} at {edge.arr_time} ({edge.travel_time} mins)")
-        
-#         last_arrival_time = edge.arr_time  # Update final arrival time dynamically
-
-#     # Compute total travel time from start to final stop
-#     start_minutes = time_to_minutes(start_time)
-#     arrival_minutes = time_to_minutes(last_arrival_time)
-#     total_travel_time = arrival_minutes - start_minutes
-
-#     print(f"\nTotal travel time: {total_travel_time} minutes")
 
 def print_path(path, starting_stop_name, start_time, total_travel_time=0):
-    """Prints the formatted shortest path based on the reconstructed path list, detecting direction changes."""
     if not path:
         print("No complete path found!")
         return
@@ -163,14 +128,9 @@ def print_path(path, starting_stop_name, start_time, total_travel_time=0):
     print(f"Start at {path[0][0].name} (Time: {start_time})")
 
     current_line = None
-    last_arrival_time = start_time  # Track arrival time dynamically
-    last_stop = None  # Track the previous stop to detect direction changes
+    last_arrival_time = start_time
 
     for prev_node, edge, current_node, line in path:
-        # Detect direction change (same stop, different departure time)
-        if prev_node.name == last_stop and edge.dep_time != last_arrival_time:
-            print(f"  ↻ Changing direction at {prev_node.name} (Wait until {edge.dep_time})")
-
         if line != current_line:
             print(f"  → Change to line {line} at {prev_node.name}")
             current_line = line
@@ -178,10 +138,8 @@ def print_path(path, starting_stop_name, start_time, total_travel_time=0):
         print(f"    → Depart at {edge.dep_time} from {prev_node.name}")
         print(f"    → Arrive at {current_node.name} at {edge.arr_time} ({edge.travel_time} mins)")
 
-        last_arrival_time = edge.arr_time  # Update final arrival time dynamically
-        last_stop = prev_node.name  # Track the last stop to check for direction changes
+        last_arrival_time = edge.arr_time
 
-    # Compute total travel time from start to final stop
     start_minutes = time_to_minutes(start_time)
     arrival_minutes = time_to_minutes(last_arrival_time)
     total_travel_time = arrival_minutes - start_minutes
@@ -192,8 +150,7 @@ def print_path(path, starting_stop_name, start_time, total_travel_time=0):
     
     
 def calculate_total_travel_time(start_time, final_arrival_time):
-    """ Calculates the total travel time in minutes. """
     if final_arrival_time < start_time:
-        final_arrival_time += 24 * 60  # Adjust for next day
+        final_arrival_time += 24 * 60
     
     return final_arrival_time - start_time

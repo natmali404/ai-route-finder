@@ -40,7 +40,7 @@ def find_a_star_path(graph, start_name, dest_name, start_time, criteria, heurist
     distance[start_node] = 0
     transfers[start_node] = 0
     
-    if heuristic == 'euclidean': #read more about this to know what it does
+    if heuristic == 'euclidean':
         heuristic_function = lambda node: euclidean_distance(node, dest_node) / 50  # avg speed 50 km/h
     elif heuristic == 'manhattan':
         heuristic_function = lambda node: manhattan_distance(node, dest_node) / 50
@@ -62,10 +62,14 @@ def find_a_star_path(graph, start_name, dest_name, start_time, criteria, heurist
                 continue
             
             wait_time = dep_total - current_time
+            #penalties for t/p
             new_transfer_count = transfers[current_stop] + (1 if current_line and edge.line != current_line else 0)
-            transfer_penalty = 10 if current_line and edge.line != current_line else 0
+            if criteria == 't':
+                total_edge_cost = (10 if (current_line and edge.line != current_line) else 0) + edge.travel_time + wait_time
+            elif criteria == 'p':
+                total_edge_cost = (100*new_transfer_count if (current_line and edge.line != current_line) else 0) + wait_time + edge.travel_time
             
-            total_edge_cost = edge.travel_time + wait_time + transfer_penalty
+            #total_edge_cost = edge.travel_time + wait_time + transfer_penalty
             new_cost = current_cost + total_edge_cost
             arr_total = time_to_minutes(edge.arr_time)
             
@@ -84,5 +88,4 @@ def find_a_star_path(graph, start_name, dest_name, start_time, criteria, heurist
     total_travel_time = calculate_total_travel_time(start_total, final_arrival_time)
     #print(f'PATH: {path}')
     return path, total_travel_time, distance[dest_node]
-    # 
     # 
