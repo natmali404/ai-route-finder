@@ -2,7 +2,6 @@ from datetime import datetime
 import heapq
 from utils import time_to_minutes, print_path, log, reconstruct_path, print_path, calculate_total_travel_time
 from graph import Graph, Node, Edge
-import math
 
 
 def find_dijkstra_path(graph, starting_stop_name, destination_stop_name, start_time, criteria):
@@ -62,9 +61,9 @@ def find_dijkstra_path(graph, starting_stop_name, destination_stop_name, start_t
     
             # transfer_penalty = 20 if (current_line is not None and neighbor_edge.line != current_line) else 0
             
-            if criteria == 't':  # Time-optimized
+            if criteria == 't':  #time-optimized
                 total_edge_cost = (10 if (current_line and neighbor_edge.line != current_line) else 0) + neighbor_edge.travel_time + wait_time
-            elif criteria == 'p':  # Transfer-optimized
+            elif criteria == 'p':  #transfer-optimized
                 total_edge_cost = (100*new_transfer_count if (current_line and neighbor_edge.line != current_line) else 0) + wait_time + neighbor_edge.travel_time
             
             new_cost = current_cost + total_edge_cost
